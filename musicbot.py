@@ -32,19 +32,20 @@ current_audio_url = None
 async def on_ready():
     print(f"✅ 로그인 완료: {bot.user}")
 
-# 간단 인사
+# -------------------------
+# Discord 명령어
+# -------------------------
+
 @bot.command()
 async def 안녕(ctx):
     await ctx.send("안녕하세요! 👋")
 
-# 반복 재생 토글
 @bot.command()
 async def 반복(ctx):
     global repeat
     repeat = not repeat
     await ctx.send("🔁 반복 재생을 시작합니다!" if repeat else "▶ 반복 재생을 종료합니다!")
 
-# 음악 재생
 @bot.command()
 async def play(ctx, url=None):
     global current_audio_url
@@ -104,7 +105,6 @@ async def play(ctx, url=None):
 
     await ctx.send(f"🎵 지금 재생 중: {title}")
 
-# 음악 정지 및 채널 나가기
 @bot.command()
 async def stop(ctx):
     global repeat
@@ -113,7 +113,6 @@ async def stop(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("🛑 음악 정지 및 음성채널에서 나갑니다.")
 
-# 봇 로그아웃/종료
 @bot.command()
 async def logout(ctx):
     await ctx.send("👋 봇을 로그아웃합니다.")
