@@ -103,3 +103,4 @@ if not DISCORD_TOKEN:
     print("⚠️ DISCORD_TOKEN 환경 변수가 설정되지 않았습니다.")
 else:
     bot.run(DISCORD_TOKEN)
+
