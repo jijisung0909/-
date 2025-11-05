@@ -100,5 +100,7 @@ async def logout(ctx):
     await bot.close()
 
 
-# 봇 로그인
-bot.run("MTQzNTE5ODcxMDIxOTgwMDY4OA.Gi7JIO.kGmatr-4B4d92UUJ1qg2xOWMwdvEoGBsdv0nX8")
+import os  
+bot.run(os.getenv("DISCORD_TOKEN"))
+
+
