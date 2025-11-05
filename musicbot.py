@@ -59,11 +59,12 @@ async def play(ctx, url=None):
     channel = ctx.author.voice.channel
     vc = ctx.voice_client or await channel.connect()
 
-    # yt_dlp 스트리밍 URL 추출 (쿠키 적용)
+    # yt_dlp 스트리밍 URL 추출
     ydl_opts = {
         'format': 'bestaudio/best',
         'quiet': True,
-        'cookiefile': r'C:\Users\pc\Downloads\cookies.txt'  # 쿠키 경로
+        # 쿠키 사용 시:
+        # 'cookiefile': 'cookies.txt'
     }
 
     try:
