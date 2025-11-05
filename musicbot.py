@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import yt_dlp
+import os
 
 # 봇 기본 설정
 intents = discord.Intents.default()
@@ -25,10 +26,7 @@ async def 안녕(ctx):
 async def 반복(ctx):
     global repeat
     repeat = not repeat
-    if repeat:
-        await ctx.send("🔁 반복 재생을 시작합니다!")
-    else:
-        await ctx.send("▶ 반복 재생을 종료합니다!")
+    await ctx.send("🔁 반복 재생을 시작합니다!" if repeat else "▶ 반복 재생을 종료합니다!")
 
 # 음악 재생
 @bot.command()
@@ -43,40 +41,40 @@ async def play(ctx, url=None):
         return
 
     channel = ctx.author.voice.channel
-    if ctx.voice_client is None:
-        vc = await channel.connect()
-    else:
-        vc = ctx.voice_client
+    vc = ctx.voice_client or await channel.connect()
 
     # yt_dlp로 스트리밍 URL 추출
-    ydl_opts = {'format': 'bestaudio', 'quiet': True}
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'quiet': True
+    }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
-        current_audio_url = info['url']  # 반복 재생용 저장
+        current_audio_url = info['url']
         title = info['title']
 
     def after_play(error):
+        if error:
+            print(f"⚠️ 재생 중 오류 발생: {error}")
         if repeat:
-            # 반복 재생
             vc.play(
                 discord.FFmpegPCMAudio(
                     current_audio_url,
-                    executable="C:/Users/pc/OneDrive/Desktop/ffmpeg-8.0-essentials_build/ffmpeg-8.0-essentials_build/bin/ffmpeg.exe",
+                    executable="ffmpeg",
                     options='-vn -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
                 ),
                 after=after_play
             )
         else:
-            print("재생 완료")
+            print("🎵 재생 완료")
 
     if vc.is_playing():
         vc.stop()
 
-    ffmpeg_path = "C:/Users/pc/OneDrive/Desktop/ffmpeg-8.0-essentials_build/ffmpeg-8.0-essentials_build/bin/ffmpeg.exe"
     vc.play(
         discord.FFmpegPCMAudio(
             current_audio_url,
-            executable=ffmpeg_path,
+            executable="ffmpeg",
             options='-vn -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
         ),
         after=after_play
@@ -88,7 +86,7 @@ async def play(ctx, url=None):
 @bot.command()
 async def stop(ctx):
     global repeat
-    repeat = False  # 반복 꺼주기
+    repeat = False
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         await ctx.send("🛑 음악 정지 및 음성채널에서 나갑니다.")
@@ -99,8 +97,9 @@ async def logout(ctx):
     await ctx.send("👋 봇을 로그아웃합니다.")
     await bot.close()
 
-
-import os  
-bot.run(os.getenv("DISCORD_TOKEN"))
-
-
+# Render 환경 변수에서 토큰 불러오기
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+if not DISCORD_TOKEN:
+    print("⚠️ DISCORD_TOKEN 환경 변수가 설정되지 않았습니다.")
+else:
+    bot.run(DISCORD_TOKEN)
