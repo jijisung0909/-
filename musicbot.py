@@ -2,13 +2,29 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import os
+import threading
+from flask import Flask
 
-# 봇 기본 설정
+# -------------------------
+# Flask 웹 서버 설정 (Render용)
+# -------------------------
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "🎵 Discord Music Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))  # Render 환경 변수 PORT 사용
+    app.run(host="0.0.0.0", port=port)
+
+# -------------------------
+# Discord 봇 설정
+# -------------------------
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 반복 재생 상태 저장
 repeat = False
 current_audio_url = None
 
@@ -16,7 +32,7 @@ current_audio_url = None
 async def on_ready():
     print(f"✅ 로그인 완료: {bot.user}")
 
-# 채팅 명령어
+# 간단 인사
 @bot.command()
 async def 안녕(ctx):
     await ctx.send("안녕하세요! 👋")
@@ -43,15 +59,22 @@ async def play(ctx, url=None):
     channel = ctx.author.voice.channel
     vc = ctx.voice_client or await channel.connect()
 
-    # yt_dlp로 스트리밍 URL 추출
+    # yt_dlp 스트리밍 URL 추출
     ydl_opts = {
         'format': 'bestaudio/best',
-        'quiet': True
+        'quiet': True,
+        # 쿠키 사용 시:
+        # 'cookiefile': 'cookies.txt'
     }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        current_audio_url = info['url']
-        title = info['title']
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            current_audio_url = info['url']
+            title = info['title']
+    except Exception as e:
+        await ctx.send(f"⚠️ 재생 중 오류 발생: {e}")
+        return
 
     def after_play(error):
         if error:
@@ -97,10 +120,16 @@ async def logout(ctx):
     await ctx.send("👋 봇을 로그아웃합니다.")
     await bot.close()
 
-# Render 환경 변수에서 토큰 불러오기
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-if not DISCORD_TOKEN:
-    print("⚠️ DISCORD_TOKEN 환경 변수가 설정되지 않았습니다.")
-else:
-    bot.run(DISCORD_TOKEN)
+# -------------------------
+# 메인 실행
+# -------------------------
+if __name__ == "__main__":
+    # Flask 서버를 별 쓰레드에서 실행
+    threading.Thread(target=run_flask).start()
 
+    # Discord 봇 실행
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+    if not DISCORD_TOKEN:
+        print("⚠️ DISCORD_TOKEN 환경 변수가 설정되지 않았습니다.")
+    else:
+        bot.run(DISCORD_TOKEN)
