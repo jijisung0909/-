@@ -103,7 +103,7 @@ async def ai(interaction: discord.Interaction, 메시지: str):
     if 메시지 in memory:
         await interaction.response.send_message(memory[메시지])
     else:
-        await interaction.response.send_message("그건 아직 몰라… `/학습` 시켜줘 🤖")
+        await interaction.response.send_message("미안해 아직 부족한 AI라 모르는게 많아😥")
 
 @tree.command(name="종료", description="봇을 종료합니다 (관리자 전용)")
 async def shutdown(interaction: discord.Interaction):
@@ -115,3 +115,4 @@ async def shutdown(interaction: discord.Interaction):
     await client.close()
 
 client.run(TOKEN)
+
