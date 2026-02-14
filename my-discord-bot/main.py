@@ -1,41 +1,39 @@
 import discord
 import google.generativeai as genai
+import os
+from flask import Flask
+from threading import Thread
 
-# 1. 가짜 웹 서버 설정
+# --- [웹 서버 설정: Render용] ---
 app = Flask('')
-
 @app.route('/')
 def home():
-    return "Bot is running!"
+    return "봇이 살아있습니다!"
 
-# 1. 설정 (여기에 본인의 키를 넣으세요)
-DISCORD_TOKEN = '여기에_디스코드_봇_토큰'
-GEMINI_API_KEY = '여기에_제미나이_API_키'
+def run():
+    app.run(host='0.0.0.0', port=8080)
 
-# 2. 제미나이 설정
-genai.configure(api_key=GEMINI_API_KEY)
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# --- [봇 설정] ---
+GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
+genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 3. 디스코드 봇 설정
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
 @client.event
-async def on_ready():
-    print(f'봇 로그인 완료: {client.user}')
-
-@client.event
 async def on_message(message):
-    # 봇이 쓴 채팅은 무시
-    if message.author == client.user:
-        return
+    if message.author == client.user: return
+    response = model.generate_content(message.content)
+    await message.channel.send(response.text)
 
-    # 채팅 채널에 메시지가 올라오면 제미나이에게 물어보기
-    try:
-        response = model.generate_content(message.content)
-        await message.channel.send(response.text)
-    except Exception as e:
-        await message.channel.send(f"오류 발생: {e}")
-
+# --- [실행] ---
+keep_alive() # 웹 서버 시작
 client.run(DISCORD_TOKEN)
